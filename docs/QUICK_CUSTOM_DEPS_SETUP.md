@@ -50,7 +50,7 @@ helm upgrade --install airflow ./airflow-helm \
 airflow:
   extraInitContainers:
     - name: install-deps
-      image: apache/airflow:3.0.0-python3.11
+      image: apache/airflow:3.0.0-python3.12
       command:
         - bash
         - -c
@@ -93,7 +93,7 @@ your-dags-repo/
 airflow:
   extraInitContainers:
     - name: install-requirements
-      image: apache/airflow:3.0.0-python3.11
+      image: apache/airflow:3.0.0-python3.12
       command:
         - bash
         - -c

@@ -5,7 +5,7 @@ airflow:
   version: "3.0.0"
   image:
     repository: apache/airflow
-    tag: "3.0.0-python3.11"
+    tag: "3.0.0-python3.12"
     pullPolicy: IfNotPresent
 
   config:
@@ -26,7 +26,7 @@ airflow:
     # Kubernetes executor settings
     AIRFLOW__KUBERNETES__NAMESPACE: default
     AIRFLOW__KUBERNETES__WORKER_CONTAINER_REPOSITORY: apache/airflow
-    AIRFLOW__KUBERNETES__WORKER_CONTAINER_TAG: "3.0.0-python3.11"
+    AIRFLOW__KUBERNETES__WORKER_CONTAINER_TAG: "3.0.0-python3.12"
 
 # Webserver configuration
 webserver:

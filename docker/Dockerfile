@@ -1,7 +1,7 @@
 # Custom Airflow 3 Image with Additional Dependencies
 # This Dockerfile adds custom Python packages and system dependencies to Apache Airflow
 
-FROM apache/airflow:3.0.0-python3.11
+FROM apache/airflow:3.0.0-python3.12
 
 # Metadata
 LABEL maintainer="your-email@example.com"

@@ -5,7 +5,7 @@
 Apache Airflow 3.0 includes several important changes from version 2.x:
 
 ### Breaking Changes
-- Python 3.8+ required (3.11 recommended)
+- Python 3.8+ required (3.12 recommended)
 - Removed deprecated features from 2.x
 - Updated database schema
 - Changes to operator interfaces

@@ -2,7 +2,7 @@
 # This approach builds wheels in a separate stage to reduce final image size
 
 # Builder stage
-FROM apache/airflow:3.0.0-python3.11 AS builder
+FROM apache/airflow:3.0.0-python3.12 AS builder
 
 USER root
 
@@ -21,7 +21,7 @@ COPY requirements.txt /tmp/requirements.txt
 RUN pip wheel --no-cache-dir --wheel-dir /tmp/wheels -r /tmp/requirements.txt
 
 # Final stage
-FROM apache/airflow:3.0.0-python3.11
+FROM apache/airflow:3.0.0-python3.12
 
 USER airflow
 

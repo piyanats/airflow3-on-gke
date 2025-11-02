@@ -18,7 +18,7 @@ There are several ways to add custom dependencies:
 Create a custom Dockerfile based on Apache Airflow:
 
 ```dockerfile
-FROM apache/airflow:3.0.0-python3.11
+FROM apache/airflow:3.0.0-python3.12
 
 # Switch to root to install system packages
 USER root
@@ -143,7 +143,7 @@ For quick testing or simple dependencies:
 airflow:
   extraInitContainers:
     - name: install-dependencies
-      image: apache/airflow:3.0.0-python3.11
+      image: apache/airflow:3.0.0-python3.12
       command:
         - bash
         - -c
@@ -188,7 +188,7 @@ your-dags-repo/
 airflow:
   extraInitContainers:
     - name: install-requirements
-      image: apache/airflow:3.0.0-python3.11
+      image: apache/airflow:3.0.0-python3.12
       command:
         - bash
         - -c
@@ -241,7 +241,7 @@ airflow:
 ### Using Custom Docker Image
 
 ```dockerfile
-FROM apache/airflow:3.0.0-python3.11
+FROM apache/airflow:3.0.0-python3.12
 
 USER root
 
@@ -332,7 +332,7 @@ For optimized image size:
 
 ```dockerfile
 # Build stage
-FROM apache/airflow:3.0.0-python3.11 AS builder
+FROM apache/airflow:3.0.0-python3.12 AS builder
 
 USER root
 RUN apt-get update && apt-get install -y gcc g++ && apt-get clean
@@ -342,7 +342,7 @@ COPY requirements.txt /tmp/requirements.txt
 RUN pip wheel --no-cache-dir --wheel-dir /tmp/wheels -r /tmp/requirements.txt
 
 # Final stage
-FROM apache/airflow:3.0.0-python3.11
+FROM apache/airflow:3.0.0-python3.12
 
 USER airflow
 COPY --from=builder /tmp/wheels /tmp/wheels
@@ -381,7 +381,7 @@ pip-compile requirements.in -o requirements.txt
 Order Dockerfile commands from least to most frequently changed:
 
 ```dockerfile
-FROM apache/airflow:3.0.0-python3.11
+FROM apache/airflow:3.0.0-python3.12
 
 # System packages (rarely change)
 USER root

@@ -259,7 +259,7 @@ dags:
 Create a Dockerfile with your DAGs:
 
 ```dockerfile
-FROM apache/airflow:3.0.0-python3.11
+FROM apache/airflow:3.0.0-python3.12
 COPY dags/ /opt/airflow/dags/
 ```
 
@@ -481,7 +481,7 @@ To upgrade to a newer version of Airflow:
 ```yaml
 airflow:
   image:
-    tag: "3.0.1-python3.11"
+    tag: "3.0.1-python3.12"
 ```
 
 2. Run the upgrade script:
