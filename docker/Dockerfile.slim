@@ -1,0 +1,13 @@
+# Slim version - Only Python packages, no system dependencies
+# Use this if you only need Python packages and want faster builds
+
+FROM apache/airflow:3.0.0-python3.11
+
+USER airflow
+
+# Copy and install Python requirements
+COPY --chown=airflow:root requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir --user -r /tmp/requirements.txt
+
+# Verify installations
+RUN pip check

@@ -1,0 +1,72 @@
+# Google Cloud Build configuration for building custom Airflow image
+#
+# Usage:
+#   gcloud builds submit --config=cloudbuild.yaml .
+#
+# Or trigger automatically on git push:
+#   gcloud builds triggers create github \
+#     --repo-name=airflow3-on-gke \
+#     --repo-owner=your-org \
+#     --branch-pattern=^main$ \
+#     --build-config=docker/cloudbuild.yaml
+
+steps:
+  # Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/airflow-custom:$SHORT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/airflow-custom:latest'
+      - '-f'
+      - 'Dockerfile'
+      - '.'
+    dir: 'docker'
+
+  # Test the image
+  - name: 'gcr.io/$PROJECT_ID/airflow-custom:$SHORT_SHA'
+    entrypoint: 'python'
+    args: ['--version']
+
+  # Test pip check
+  - name: 'gcr.io/$PROJECT_ID/airflow-custom:$SHORT_SHA'
+    entrypoint: 'pip'
+    args: ['check']
+
+  # Test imports
+  - name: 'gcr.io/$PROJECT_ID/airflow-custom:$SHORT_SHA'
+    entrypoint: 'python'
+    args:
+      - '-c'
+      - 'import pandas, numpy, google.cloud.storage; print("All imports successful")'
+
+  # Push the image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/airflow-custom:$SHORT_SHA'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/airflow-custom:latest'
+
+# Images to be pushed to Container Registry
+images:
+  - 'gcr.io/$PROJECT_ID/airflow-custom:$SHORT_SHA'
+  - 'gcr.io/$PROJECT_ID/airflow-custom:latest'
+
+# Build options
+options:
+  machineType: 'N1_HIGHCPU_8'
+  diskSizeGb: 100
+  logging: CLOUD_LOGGING_ONLY
+
+# Timeout
+timeout: '1800s'  # 30 minutes
+
+# Tags for organization
+tags:
+  - 'airflow'
+  - 'custom-image'

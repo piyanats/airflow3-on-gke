@@ -1,0 +1,16 @@
+# Minimal requirements example
+# Use this as a starting point and add only what you need
+
+# Google Cloud
+google-cloud-storage==2.13.0
+google-cloud-bigquery==3.14.0
+
+# Data Processing
+pandas==2.1.4
+numpy==1.26.2
+
+# HTTP Client
+requests==2.31.0
+
+# Utilities
+python-dotenv==1.0.0

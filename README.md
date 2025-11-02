@@ -107,6 +107,35 @@ See detailed guides:
 - `examples/values-cloudsql-private-ip.yaml` - Cloud SQL with Private IP
 - `examples/values-external-db.yaml` - Any external PostgreSQL
 
+## Installing Custom Dependencies
+
+To add custom Python packages or system dependencies to Airflow:
+
+### Quick Setup
+
+```bash
+# 1. Edit requirements
+vim docker/requirements.txt
+
+# 2. Build custom image
+export GCP_PROJECT_ID="your-project-id"
+./scripts/build-custom-image.sh
+
+# 3. Deploy with custom image
+helm upgrade --install airflow ./airflow-helm \
+    -f examples/values-custom-image.yaml
+```
+
+See detailed guides:
+- [Quick Custom Dependencies Setup](docs/QUICK_CUSTOM_DEPS_SETUP.md) - Quick start guide (Thai)
+- [Custom Dependencies Guide](docs/CUSTOM_DEPENDENCIES.md) - Complete documentation
+
+### Available Dockerfiles
+
+- `docker/Dockerfile` - Standard with system dependencies
+- `docker/Dockerfile.slim` - Lightweight, Python only
+- `docker/Dockerfile.multi-stage` - Optimized for production
+
 ## Configuration
 
 ### Environment Variables
