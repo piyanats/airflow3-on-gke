@@ -1,0 +1,166 @@
+# Default values for Apache Airflow 3 on GKE
+# This is a YAML-formatted file.
+
+# Airflow version
+airflow:
+  version: "3.0.0"
+  image:
+    repository: apache/airflow
+    tag: "3.0.0-python3.11"
+    pullPolicy: IfNotPresent
+
+  # Airflow configuration
+  config:
+    # Core settings
+    AIRFLOW__CORE__EXECUTOR: KubernetesExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+    AIRFLOW__CORE__DAGS_FOLDER: "/opt/airflow/dags"
+
+    # Database settings (using PostgreSQL)
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
+
+    # Webserver settings
+    AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "True"
+    AIRFLOW__WEBSERVER__RBAC: "True"
+    AIRFLOW__WEBSERVER__BASE_URL: "http://localhost:8080"
+
+    # Kubernetes executor settings
+    AIRFLOW__KUBERNETES__NAMESPACE: default
+    AIRFLOW__KUBERNETES__WORKER_CONTAINER_REPOSITORY: apache/airflow
+    AIRFLOW__KUBERNETES__WORKER_CONTAINER_TAG: "3.0.0-python3.11"
+    AIRFLOW__KUBERNETES__DELETE_WORKER_PODS: "True"
+    AIRFLOW__KUBERNETES__DELETE_WORKER_PODS_ON_FAILURE: "False"
+
+    # Logging
+    AIRFLOW__LOGGING__LOGGING_LEVEL: INFO
+    AIRFLOW__LOGGING__REMOTE_LOGGING: "False"
+
+# Webserver deployment
+webserver:
+  replicas: 1
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+  service:
+    type: LoadBalancer
+    port: 8080
+    annotations: {}
+
+# Scheduler deployment
+scheduler:
+  replicas: 1
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+
+# PostgreSQL database
+postgresql:
+  enabled: true
+  image:
+    repository: postgres
+    tag: "15-alpine"
+  auth:
+    username: airflow
+    password: airflow
+    database: airflow
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: "standard-rwo"
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+
+# Redis (for CeleryExecutor - optional)
+redis:
+  enabled: false
+  image:
+    repository: redis
+    tag: "7-alpine"
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "200m"
+      memory: "512Mi"
+
+# DAGs configuration
+dags:
+  # Git-sync for DAGs
+  gitSync:
+    enabled: false
+    repo: ""
+    branch: "main"
+    subPath: "dags"
+    interval: 60
+
+  # Persistent volume for DAGs
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: "standard-rwo"
+    accessMode: ReadWriteOnce
+
+# Logs persistence
+logs:
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: "standard-rwo"
+
+# Service Account
+serviceAccount:
+  create: true
+  name: "airflow"
+  annotations:
+    # For GKE Workload Identity
+    # iam.gke.io/gcp-service-account: airflow@PROJECT_ID.iam.gserviceaccount.com
+
+# RBAC
+rbac:
+  create: true
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: airflow.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+    # - secretName: airflow-tls
+    #   hosts:
+    #     - airflow.example.com
+
+# Extra environment variables
+extraEnv: []
+
+# Extra secrets
+extraSecrets: []
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}

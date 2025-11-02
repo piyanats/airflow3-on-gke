@@ -1,0 +1,17 @@
+{{- if .Values.logs.persistence.enabled -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Chart.Name }}-logs
+  labels:
+    app: {{ .Chart.Name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    component: logs
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: {{ .Values.logs.persistence.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.logs.persistence.size }}
+{{- end }}

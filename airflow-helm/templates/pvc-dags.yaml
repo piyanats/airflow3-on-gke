@@ -1,0 +1,17 @@
+{{- if .Values.dags.persistence.enabled -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Chart.Name }}-dags
+  labels:
+    app: {{ .Chart.Name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    component: dags
+spec:
+  accessModes:
+    - {{ .Values.dags.persistence.accessMode }}
+  storageClassName: {{ .Values.dags.persistence.storageClass }}
+  resources:
+    requests:
+      storage: {{ .Values.dags.persistence.size }}
+{{- end }}

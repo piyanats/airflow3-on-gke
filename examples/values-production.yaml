@@ -1,0 +1,199 @@
+# Production values for Apache Airflow 3 on GKE
+# This configuration is optimized for production use
+
+airflow:
+  version: "3.0.0"
+  image:
+    repository: apache/airflow
+    tag: "3.0.0-python3.11"
+    pullPolicy: IfNotPresent
+
+  config:
+    # Core settings
+    AIRFLOW__CORE__EXECUTOR: KubernetesExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+    AIRFLOW__CORE__DAGS_FOLDER: "/opt/airflow/dags"
+    AIRFLOW__CORE__MAX_ACTIVE_RUNS_PER_DAG: "3"
+    AIRFLOW__CORE__PARALLELISM: "32"
+    AIRFLOW__CORE__DAG_CONCURRENCY: "16"
+    AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: "16"
+
+    # Database - Use Cloud SQL in production
+    # Replace with your Cloud SQL connection string
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:CHANGE_ME@/airflow?host=/cloudsql/PROJECT:REGION:INSTANCE
+    AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_SIZE: "10"
+    AIRFLOW__DATABASE__SQL_ALCHEMY_MAX_OVERFLOW: "20"
+    AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_RECYCLE: "3600"
+
+    # Webserver settings
+    AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "False"
+    AIRFLOW__WEBSERVER__RBAC: "True"
+    AIRFLOW__WEBSERVER__BASE_URL: "https://airflow.yourdomain.com"
+    AIRFLOW__WEBSERVER__WEB_SERVER_WORKER_TIMEOUT: "300"
+
+    # Kubernetes executor settings
+    AIRFLOW__KUBERNETES__NAMESPACE: default
+    AIRFLOW__KUBERNETES__WORKER_CONTAINER_REPOSITORY: apache/airflow
+    AIRFLOW__KUBERNETES__WORKER_CONTAINER_TAG: "3.0.0-python3.11"
+    AIRFLOW__KUBERNETES__DELETE_WORKER_PODS: "True"
+    AIRFLOW__KUBERNETES__DELETE_WORKER_PODS_ON_FAILURE: "False"
+    AIRFLOW__KUBERNETES__WORKER_PODS_CREATION_BATCH_SIZE: "16"
+
+    # Logging - Use GCS for remote logging
+    AIRFLOW__LOGGING__LOGGING_LEVEL: INFO
+    AIRFLOW__LOGGING__REMOTE_LOGGING: "True"
+    AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER: "gs://YOUR-BUCKET/airflow/logs"
+    AIRFLOW__LOGGING__REMOTE_LOG_CONN_ID: "google_cloud_default"
+    AIRFLOW__LOGGING__COLORED_CONSOLE_LOG: "False"
+
+    # Metrics
+    AIRFLOW__METRICS__STATSD_ON: "True"
+    AIRFLOW__METRICS__STATSD_HOST: "statsd"
+    AIRFLOW__METRICS__STATSD_PORT: "8125"
+
+    # Security
+    AIRFLOW__WEBSERVER__COOKIE_SECURE: "True"
+    AIRFLOW__WEBSERVER__COOKIE_SAMESITE: "Lax"
+    AIRFLOW__API__AUTH_BACKEND: "airflow.api.auth.backend.basic_auth"
+
+# Webserver deployment - Production settings
+webserver:
+  replicas: 3  # High availability
+  resources:
+    requests:
+      cpu: "2000m"
+      memory: "4Gi"
+    limits:
+      cpu: "4000m"
+      memory: "8Gi"
+  service:
+    type: ClusterIP  # Use Ingress instead of LoadBalancer
+    port: 8080
+    annotations: {}
+
+  # Pod Disruption Budget
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 2
+
+  # Autoscaling
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+
+# Scheduler deployment - Production settings
+scheduler:
+  replicas: 2  # High availability
+  resources:
+    requests:
+      cpu: "2000m"
+      memory: "4Gi"
+    limits:
+      cpu: "4000m"
+      memory: "8Gi"
+
+  # Pod Disruption Budget
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+# PostgreSQL - Disabled in production (use Cloud SQL)
+postgresql:
+  enabled: false
+
+# DAGs configuration - Production
+dags:
+  # Git-sync for DAGs
+  gitSync:
+    enabled: true
+    repo: "https://github.com/your-org/airflow-dags.git"
+    branch: "main"
+    subPath: "dags"
+    interval: 30  # Sync every 30 seconds
+
+  # Persistent volume for DAGs
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: "premium-rwo"  # Use SSD
+    accessMode: ReadWriteOnce
+
+# Logs persistence - Production
+logs:
+  persistence:
+    enabled: false  # Using GCS remote logging instead
+
+# Service Account - With Workload Identity
+serviceAccount:
+  create: true
+  name: "airflow"
+  annotations:
+    iam.gke.io/gcp-service-account: airflow-sa@YOUR-PROJECT-ID.iam.gserviceaccount.com
+
+# RBAC
+rbac:
+  create: true
+
+# Ingress - Production with HTTPS
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+  hosts:
+    - host: airflow.yourdomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: airflow-tls
+      hosts:
+        - airflow.yourdomain.com
+
+# Security context
+securityContext:
+  runAsUser: 50000
+  fsGroup: 50000
+  runAsNonRoot: true
+
+# Pod security
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 50000
+  fsGroup: 50000
+
+# Network Policy
+networkPolicy:
+  enabled: true
+
+# Node selector - Use specific node pool
+nodeSelector:
+  workload: airflow
+
+# Tolerations
+tolerations:
+  - key: "workload"
+    operator: "Equal"
+    value: "airflow"
+    effect: "NoSchedule"
+
+# Affinity - Spread pods across zones
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - airflow
+          topologyKey: topology.kubernetes.io/zone

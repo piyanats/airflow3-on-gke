@@ -1,0 +1,125 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-webserver
+  labels:
+    app: {{ .Chart.Name }}
+    component: webserver
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+spec:
+  replicas: {{ .Values.webserver.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      component: webserver
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+        component: webserver
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      initContainers:
+      - name: wait-for-db
+        image: "{{ .Values.airflow.image.repository }}:{{ .Values.airflow.image.tag }}"
+        command: ['sh', '-c']
+        args:
+          - |
+            until airflow db check; do
+              echo "Waiting for database..."
+              sleep 5
+            done
+            echo "Database is ready!"
+        envFrom:
+        - configMapRef:
+            name: {{ .Chart.Name }}-config
+      - name: init-db
+        image: "{{ .Values.airflow.image.repository }}:{{ .Values.airflow.image.tag }}"
+        command: ['sh', '-c']
+        args:
+          - |
+            airflow db migrate
+            airflow users create \
+              --username admin \
+              --password admin \
+              --firstname Admin \
+              --lastname User \
+              --role Admin \
+              --email admin@example.com || true
+        envFrom:
+        - configMapRef:
+            name: {{ .Chart.Name }}-config
+      containers:
+      - name: webserver
+        image: "{{ .Values.airflow.image.repository }}:{{ .Values.airflow.image.tag }}"
+        imagePullPolicy: {{ .Values.airflow.image.pullPolicy }}
+        command: ["airflow", "webserver"]
+        ports:
+        - name: webserver
+          containerPort: 8080
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: {{ .Chart.Name }}-config
+        env:
+        - name: AIRFLOW__CORE__FERNET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-secret
+              key: fernet-key
+        - name: AIRFLOW__WEBSERVER__SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-secret
+              key: webserver-secret-key
+        {{- with .Values.extraEnv }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        volumeMounts:
+        - name: dags
+          mountPath: /opt/airflow/dags
+        - name: logs
+          mountPath: /opt/airflow/logs
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: webserver
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: webserver
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        resources:
+          {{- toYaml .Values.webserver.resources | nindent 10 }}
+      volumes:
+      - name: dags
+        {{- if .Values.dags.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ .Chart.Name }}-dags
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      - name: logs
+        {{- if .Values.logs.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ .Chart.Name }}-logs
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,84 @@
+# Custom values example for Apache Airflow 3
+# Copy this file and modify according to your needs
+
+airflow:
+  version: "3.0.0"
+  image:
+    repository: apache/airflow
+    tag: "3.0.0-python3.11"
+    pullPolicy: IfNotPresent
+
+  config:
+    AIRFLOW__CORE__EXECUTOR: KubernetesExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+
+    # Use your own database connection
+    # AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://user:pass@host:5432/db
+
+    # Enable remote logging to GCS (uncomment and configure)
+    # AIRFLOW__LOGGING__REMOTE_LOGGING: "True"
+    # AIRFLOW__LOGGING__REMOTE_BASE_LOG_FOLDER: gs://your-bucket/airflow/logs
+    # AIRFLOW__LOGGING__REMOTE_LOG_CONN_ID: google_cloud_default
+
+webserver:
+  replicas: 2
+  resources:
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+  service:
+    type: LoadBalancer
+    annotations:
+      # For HTTPS/SSL on GCP
+      # cloud.google.com/load-balancer-type: "External"
+
+scheduler:
+  replicas: 2
+  resources:
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+
+postgresql:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: "standard-rwo"
+
+dags:
+  gitSync:
+    enabled: true
+    repo: "https://github.com/your-org/your-dags-repo.git"
+    branch: "main"
+    subPath: "dags"
+    interval: 60
+
+# Enable ingress with your domain
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: airflow.yourdomain.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: airflow-tls
+      hosts:
+        - airflow.yourdomain.com
+
+# Workload Identity for GCP
+serviceAccount:
+  create: true
+  name: "airflow"
+  annotations:
+    iam.gke.io/gcp-service-account: airflow@YOUR-PROJECT-ID.iam.gserviceaccount.com

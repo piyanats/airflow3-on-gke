@@ -1,0 +1,44 @@
+# Airflow
+airflow.db
+airflow.cfg
+logs/
+*.log
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.eggs/
+*.egg
+
+# Kubernetes
+*.key
+*.crt
+kubeconfig
+
+# Helm
+*.tgz
+charts/
+
+# Environment
+.env
+.venv
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Custom values
+my-values.yaml
+*-custom.yaml
+!examples/values-custom.yaml

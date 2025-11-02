@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-scheduler
+  labels:
+    app: {{ .Chart.Name }}
+    component: scheduler
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+spec:
+  replicas: {{ .Values.scheduler.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      component: scheduler
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+        component: scheduler
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      initContainers:
+      - name: wait-for-db
+        image: "{{ .Values.airflow.image.repository }}:{{ .Values.airflow.image.tag }}"
+        command: ['sh', '-c']
+        args:
+          - |
+            until airflow db check; do
+              echo "Waiting for database..."
+              sleep 5
+            done
+            echo "Database is ready!"
+        envFrom:
+        - configMapRef:
+            name: {{ .Chart.Name }}-config
+      containers:
+      - name: scheduler
+        image: "{{ .Values.airflow.image.repository }}:{{ .Values.airflow.image.tag }}"
+        imagePullPolicy: {{ .Values.airflow.image.pullPolicy }}
+        command: ["airflow", "scheduler"]
+        envFrom:
+        - configMapRef:
+            name: {{ .Chart.Name }}-config
+        env:
+        - name: AIRFLOW__CORE__FERNET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Chart.Name }}-secret
+              key: fernet-key
+        {{- with .Values.extraEnv }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        volumeMounts:
+        - name: dags
+          mountPath: /opt/airflow/dags
+        - name: logs
+          mountPath: /opt/airflow/logs
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - |
+              airflow jobs check --job-type SchedulerJob --hostname $(hostname)
+          initialDelaySeconds: 60
+          periodSeconds: 60
+          timeoutSeconds: 10
+        resources:
+          {{- toYaml .Values.scheduler.resources | nindent 10 }}
+      volumes:
+      - name: dags
+        {{- if .Values.dags.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ .Chart.Name }}-dags
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      - name: logs
+        {{- if .Values.logs.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ .Chart.Name }}-logs
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

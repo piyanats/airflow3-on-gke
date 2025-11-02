@@ -1,0 +1,16 @@
+apiVersion: v2
+name: airflow
+description: Apache Airflow 3 - A platform to programmatically author, schedule, and monitor workflows
+type: application
+version: 1.0.0
+appVersion: "3.0.0"
+keywords:
+  - airflow
+  - workflow
+  - scheduler
+  - data
+home: https://airflow.apache.org/
+sources:
+  - https://github.com/apache/airflow
+maintainers:
+  - name: Airflow Team
