@@ -82,6 +82,31 @@ The deployment includes:
 - **Kubernetes Executor**: Runs tasks as individual Kubernetes pods
 - **Persistent Volumes**: For DAGs and logs
 
+## Using External PostgreSQL Database
+
+For production use, it's recommended to use an external PostgreSQL database like Google Cloud SQL instead of the bundled PostgreSQL pod.
+
+### Quick Setup with Cloud SQL
+
+```bash
+# Create Cloud SQL instance
+./scripts/create-cloud-sql.sh
+
+# Install Airflow with Cloud SQL
+helm upgrade --install airflow ./airflow-helm \
+    -f examples/values-cloudsql.yaml
+```
+
+See detailed guides:
+- [Quick External DB Setup](docs/QUICK_EXTERNAL_DB_SETUP.md) - Quick start guide (Thai)
+- [External PostgreSQL Guide](docs/EXTERNAL_POSTGRESQL.md) - Complete documentation
+
+### Available Examples
+
+- `examples/values-cloudsql.yaml` - Cloud SQL with Cloud SQL Proxy
+- `examples/values-cloudsql-private-ip.yaml` - Cloud SQL with Private IP
+- `examples/values-external-db.yaml` - Any external PostgreSQL
+
 ## Configuration
 
 ### Environment Variables

@@ -1,0 +1,96 @@
+# Airflow configuration with external PostgreSQL database
+# This example can be used with any external PostgreSQL database (not just Cloud SQL)
+
+airflow:
+  version: "3.0.0"
+  image:
+    repository: apache/airflow
+    tag: "3.0.0-python3.11"
+    pullPolicy: IfNotPresent
+
+  config:
+    # Core settings
+    AIRFLOW__CORE__EXECUTOR: KubernetesExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+
+    # External PostgreSQL connection
+    # Format: postgresql+psycopg2://USER:PASSWORD@HOST:PORT/DATABASE
+    # Replace with your database details
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:CHANGE_PASSWORD@your-db-host.example.com:5432/airflow
+
+    # Optional: Enable SSL
+    # AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:CHANGE_PASSWORD@your-db-host:5432/airflow?sslmode=require
+
+    # Connection pool settings
+    AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_SIZE: "10"
+    AIRFLOW__DATABASE__SQL_ALCHEMY_MAX_OVERFLOW: "20"
+    AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_RECYCLE: "3600"
+    AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_PRE_PING: "True"
+
+    # Kubernetes executor settings
+    AIRFLOW__KUBERNETES__NAMESPACE: default
+    AIRFLOW__KUBERNETES__WORKER_CONTAINER_REPOSITORY: apache/airflow
+    AIRFLOW__KUBERNETES__WORKER_CONTAINER_TAG: "3.0.0-python3.11"
+    AIRFLOW__KUBERNETES__DELETE_WORKER_PODS: "True"
+
+# Webserver configuration
+webserver:
+  replicas: 1
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+  service:
+    type: LoadBalancer
+    port: 8080
+
+# Scheduler configuration
+scheduler:
+  replicas: 1
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+
+# Disable bundled PostgreSQL
+postgresql:
+  enabled: false
+
+# Service Account
+serviceAccount:
+  create: true
+  name: airflow
+
+# DAGs configuration
+dags:
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: "standard-rwo"
+
+# Logs configuration
+logs:
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: "standard-rwo"
+
+# RBAC
+rbac:
+  create: true
+
+# Optional: Use Kubernetes secret for database credentials
+# Create secret first:
+# kubectl create secret generic airflow-db-secret \
+#   --from-literal=sql-alchemy-conn="postgresql+psycopg2://USER:PASS@HOST:PORT/DB"
+
+# Then uncomment and use:
+# extraEnvFrom:
+#   - secretRef:
+#       name: airflow-db-secret

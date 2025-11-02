@@ -1,0 +1,116 @@
+# Airflow configuration with Google Cloud SQL
+# This example shows how to configure Airflow to use Cloud SQL instead of bundled PostgreSQL
+
+airflow:
+  version: "3.0.0"
+  image:
+    repository: apache/airflow
+    tag: "3.0.0-python3.11"
+    pullPolicy: IfNotPresent
+
+  config:
+    # Core settings
+    AIRFLOW__CORE__EXECUTOR: KubernetesExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+
+    # Cloud SQL connection using Unix socket (recommended)
+    # Format: postgresql+psycopg2://USER:PASSWORD@/DATABASE?host=/cloudsql/PROJECT:REGION:INSTANCE
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:CHANGE_PASSWORD@/airflow?host=/cloudsql/PROJECT_ID:REGION:INSTANCE_NAME
+
+    # Connection pool settings (optimized for Cloud SQL)
+    AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_SIZE: "10"
+    AIRFLOW__DATABASE__SQL_ALCHEMY_MAX_OVERFLOW: "20"
+    AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_RECYCLE: "3600"
+    AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_PRE_PING: "True"
+
+    # Kubernetes executor settings
+    AIRFLOW__KUBERNETES__NAMESPACE: default
+    AIRFLOW__KUBERNETES__WORKER_CONTAINER_REPOSITORY: apache/airflow
+    AIRFLOW__KUBERNETES__WORKER_CONTAINER_TAG: "3.0.0-python3.11"
+
+# Webserver configuration
+webserver:
+  replicas: 2
+  resources:
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+
+# Scheduler configuration
+scheduler:
+  replicas: 2
+  resources:
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+
+# Disable bundled PostgreSQL
+postgresql:
+  enabled: false
+
+# Service Account with Workload Identity
+serviceAccount:
+  create: true
+  name: airflow
+  annotations:
+    # Replace with your GCP service account
+    iam.gke.io/gcp-service-account: airflow-db-sa@PROJECT_ID.iam.gserviceaccount.com
+
+# Cloud SQL Proxy sidecar container
+# This allows connection to Cloud SQL using Unix socket
+extraContainers:
+  webserver:
+    - name: cloud-sql-proxy
+      image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
+      args:
+        - "--structured-logs"
+        - "--port=5432"
+        - "PROJECT_ID:REGION:INSTANCE_NAME"
+      securityContext:
+        runAsNonRoot: true
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "128Mi"
+        limits:
+          cpu: "200m"
+          memory: "256Mi"
+
+  scheduler:
+    - name: cloud-sql-proxy
+      image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
+      args:
+        - "--structured-logs"
+        - "--port=5432"
+        - "PROJECT_ID:REGION:INSTANCE_NAME"
+      securityContext:
+        runAsNonRoot: true
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "128Mi"
+        limits:
+          cpu: "200m"
+          memory: "256Mi"
+
+# DAGs configuration
+dags:
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: "standard-rwo"
+
+# Logs - Use GCS for remote logging
+logs:
+  persistence:
+    enabled: false  # Using GCS instead
+
+# RBAC
+rbac:
+  create: true

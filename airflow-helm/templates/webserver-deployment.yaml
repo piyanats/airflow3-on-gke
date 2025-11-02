@@ -96,6 +96,9 @@ spec:
           timeoutSeconds: 5
         resources:
           {{- toYaml .Values.webserver.resources | nindent 10 }}
+      {{- with .Values.extraContainers.webserver }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
       volumes:
       - name: dags
         {{- if .Values.dags.persistence.enabled }}

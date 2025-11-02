@@ -156,6 +156,26 @@ extraEnv: []
 # Extra secrets
 extraSecrets: []
 
+# Extra containers (e.g., for Cloud SQL Proxy)
+extraContainers:
+  webserver: []
+  scheduler: []
+  # Example for Cloud SQL Proxy:
+  # webserver:
+  #   - name: cloud-sql-proxy
+  #     image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
+  #     args:
+  #       - "--structured-logs"
+  #       - "--port=5432"
+  #       - "PROJECT:REGION:INSTANCE"
+  # scheduler:
+  #   - name: cloud-sql-proxy
+  #     image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:latest
+  #     args:
+  #       - "--structured-logs"
+  #       - "--port=5432"
+  #       - "PROJECT:REGION:INSTANCE"
+
 # Node selector
 nodeSelector: {}
 

@@ -1,0 +1,71 @@
+# Airflow configuration with Cloud SQL using Private IP
+# This example connects directly to Cloud SQL using private IP (no Cloud SQL Proxy needed)
+
+airflow:
+  version: "3.0.0"
+  image:
+    repository: apache/airflow
+    tag: "3.0.0-python3.11"
+    pullPolicy: IfNotPresent
+
+  config:
+    # Core settings
+    AIRFLOW__CORE__EXECUTOR: KubernetesExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+
+    # Cloud SQL connection using Private IP
+    # Replace PRIVATE_IP with your Cloud SQL instance private IP
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:CHANGE_PASSWORD@PRIVATE_IP:5432/airflow
+
+    # Connection pool settings
+    AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_SIZE: "10"
+    AIRFLOW__DATABASE__SQL_ALCHEMY_MAX_OVERFLOW: "20"
+    AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_RECYCLE: "3600"
+    AIRFLOW__DATABASE__SQL_ALCHEMY_POOL_PRE_PING: "True"
+
+    # Kubernetes executor settings
+    AIRFLOW__KUBERNETES__NAMESPACE: default
+    AIRFLOW__KUBERNETES__WORKER_CONTAINER_REPOSITORY: apache/airflow
+    AIRFLOW__KUBERNETES__WORKER_CONTAINER_TAG: "3.0.0-python3.11"
+
+# Webserver configuration
+webserver:
+  replicas: 2
+  resources:
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+
+# Scheduler configuration
+scheduler:
+  replicas: 2
+  resources:
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+
+# Disable bundled PostgreSQL
+postgresql:
+  enabled: false
+
+# Service Account
+serviceAccount:
+  create: true
+  name: airflow
+
+# DAGs configuration
+dags:
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: "standard-rwo"
+
+# RBAC
+rbac:
+  create: true
