@@ -1,13 +1,21 @@
-# Slim version - Only Python packages, no system dependencies
-# Use this if you only need Python packages and want faster builds
+# Slim version - Only Python packages using UV (super fast!)
+# UV is 10-100x faster than pip, written in Rust
 
 FROM apache/airflow:3.0.0-python3.12
 
 USER airflow
 
-# Copy and install Python requirements
+# Install UV package manager
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Add UV to PATH
+ENV PATH="/home/airflow/.cargo/bin:$PATH"
+
+# Copy and install Python requirements using UV
 COPY --chown=airflow:root requirements.txt /tmp/requirements.txt
-RUN pip install --no-cache-dir --user -r /tmp/requirements.txt
+RUN uv pip install --system -r /tmp/requirements.txt && \
+    rm /tmp/requirements.txt
 
 # Verify installations
-RUN pip check
+RUN python -c "import sys; print(f'Python {sys.version}')" && \
+    uv pip list

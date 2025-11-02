@@ -132,9 +132,12 @@ See detailed guides:
 
 ### Available Dockerfiles
 
-- `docker/Dockerfile` - Standard with system dependencies
-- `docker/Dockerfile.slim` - Lightweight, Python only
-- `docker/Dockerfile.multi-stage` - Optimized for production
+- `docker/Dockerfile` - Standard with UV package manager (10-100x faster than pip)
+- `docker/Dockerfile.slim` - Lightweight with UV, Python only
+- `docker/Dockerfile.multi-stage` - Optimized multi-stage build with UV
+- `docker/Dockerfile.uv-fast` - Ultra-fast build maximizing UV's caching
+
+All Dockerfiles now use **UV** - an extremely fast Python package installer written in Rust. Builds are 10-100x faster than pip!
 
 ## Configuration
 

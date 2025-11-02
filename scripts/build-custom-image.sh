@@ -64,6 +64,7 @@ echo "  Image Tag: $IMAGE_TAG"
 echo "  Dockerfile: $DOCKERFILE"
 echo "  Registry: $REGISTRY_TYPE"
 echo "  Full Image: $FULL_IMAGE_NAME"
+echo "  Package Manager: UV (10-100x faster than pip)"
 echo ""
 
 # Check if Dockerfile exists
@@ -134,10 +135,15 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     docker run --rm "$FULL_IMAGE_NAME" python -c "import google.cloud.storage; print('✓ google-cloud-storage')" || true
     docker run --rm "$FULL_IMAGE_NAME" python -c "import requests; print('✓ requests')"
 
-    # Test pip check
+    # Test UV if available
+    echo ""
+    echo "Checking UV installation:"
+    docker run --rm "$FULL_IMAGE_NAME" bash -c "which uv && uv --version" || echo "UV not found (using pip)"
+
+    # Test package check
     echo ""
     echo "Checking for conflicts:"
-    docker run --rm "$FULL_IMAGE_NAME" pip check
+    docker run --rm "$FULL_IMAGE_NAME" bash -c "uv pip check 2>/dev/null || pip check"
 fi
 
 # Push to registry

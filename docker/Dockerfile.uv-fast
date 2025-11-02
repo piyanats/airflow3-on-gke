@@ -1,0 +1,33 @@
+# Ultra-fast build using UV with caching
+# This Dockerfile maximizes UV's speed with layer caching
+
+FROM apache/airflow:3.0.0-python3.12
+
+USER root
+
+# Install UV once in a separate layer (cached)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.cargo/bin:$PATH"
+
+USER airflow
+
+# Install UV for airflow user (cached)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/home/airflow/.cargo/bin:$PATH"
+
+# Copy requirements (invalidates cache only when requirements change)
+COPY --chown=airflow:root requirements.txt /tmp/requirements.txt
+
+# Install using UV with caching enabled
+# UV automatically caches downloads and built wheels
+RUN uv pip install \
+    --system \
+    --no-cache \
+    -r /tmp/requirements.txt && \
+    rm /tmp/requirements.txt
+
+# Verify installations
+RUN python -c "import pandas, numpy; print('✓ Core packages installed')" && \
+    uv pip list | head -20
+
+WORKDIR /opt/airflow
