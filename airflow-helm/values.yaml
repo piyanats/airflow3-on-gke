@@ -9,6 +9,22 @@ airflow:
     tag: "3.0.0-python3.12"
     pullPolicy: IfNotPresent
 
+  # SECURITY: These secrets are REQUIRED for production deployments
+  # Generate fernet key with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+  # Generate webserver secret with: openssl rand -base64 32
+  # For development only, you can use these (DO NOT USE IN PRODUCTION):
+  fernetKey: "CHANGE_ME_GENERATE_WITH_FERNET"
+  webserverSecretKey: "CHANGE_ME_GENERATE_WITH_OPENSSL"
+
+  # Admin user credentials
+  # SECURITY: Change these for production!
+  adminUser:
+    username: "admin"
+    password: "admin"  # CHANGE THIS!
+    firstname: "Admin"
+    lastname: "User"
+    email: "admin@example.com"
+
   # Airflow configuration
   config:
     # Core settings
@@ -69,7 +85,9 @@ postgresql:
     tag: "15-alpine"
   auth:
     username: airflow
-    password: airflow
+    # SECURITY: Change this password for production!
+    # Generate with: openssl rand -base64 16
+    password: "CHANGE_ME_GENERATE_RANDOM_PASSWORD"
     database: airflow
   persistence:
     enabled: true

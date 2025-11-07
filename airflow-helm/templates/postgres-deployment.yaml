@@ -2,20 +2,29 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: postgres
+  name: {{ .Release.Name }}-postgres
   labels:
-    app: postgres
+    app: {{ .Release.Name }}
+    component: postgres
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: postgres
+      app: {{ .Release.Name }}
+      component: postgres
   template:
     metadata:
       labels:
-        app: postgres
+        app: {{ .Release.Name }}
+        component: postgres
+        release: {{ .Release.Name }}
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        fsGroup: 999
       containers:
       - name: postgres
         image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"
@@ -26,7 +35,10 @@ spec:
         - name: POSTGRES_USER
           value: {{ .Values.postgresql.auth.username }}
         - name: POSTGRES_PASSWORD
-          value: {{ .Values.postgresql.auth.password }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-postgres-secret
+              key: postgres-password
         - name: POSTGRES_DB
           value: {{ .Values.postgresql.auth.database }}
         - name: PGDATA
@@ -34,13 +46,33 @@ spec:
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U {{ .Values.postgresql.auth.username }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U {{ .Values.postgresql.auth.username }}
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
         resources:
           {{- toYaml .Values.postgresql.resources | nindent 10 }}
       volumes:
       - name: postgres-storage
         {{- if .Values.postgresql.persistence.enabled }}
         persistentVolumeClaim:
-          claimName: postgres-pvc
+          claimName: {{ .Release.Name }}-postgres-pvc
         {{- else }}
         emptyDir: {}
         {{- end }}
@@ -49,10 +81,12 @@ spec:
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: postgres-pvc
+  name: {{ .Release.Name }}-postgres-pvc
   labels:
-    app: postgres
+    app: {{ .Release.Name }}
+    component: postgres
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
 spec:
   accessModes:
     - ReadWriteOnce
@@ -67,8 +101,10 @@ kind: Service
 metadata:
   name: postgres
   labels:
-    app: postgres
+    app: {{ .Release.Name }}
+    component: postgres
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
 spec:
   type: ClusterIP
   ports:
@@ -77,5 +113,6 @@ spec:
     protocol: TCP
     name: postgres
   selector:
-    app: postgres
+    app: {{ .Release.Name }}
+    component: postgres
 {{- end }}

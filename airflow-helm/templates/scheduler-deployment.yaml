@@ -1,22 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Chart.Name }}-scheduler
+  name: {{ .Release.Name }}-scheduler
   labels:
-    app: {{ .Chart.Name }}
+    app: {{ .Release.Name }}
     component: scheduler
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
 spec:
   replicas: {{ .Values.scheduler.replicas }}
   selector:
     matchLabels:
-      app: {{ .Chart.Name }}
+      app: {{ .Release.Name }}
       component: scheduler
   template:
     metadata:
       labels:
-        app: {{ .Chart.Name }}
+        app: {{ .Release.Name }}
         component: scheduler
+        release: {{ .Release.Name }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
       initContainers:
@@ -25,14 +27,28 @@ spec:
         command: ['sh', '-c']
         args:
           - |
-            until airflow db check; do
-              echo "Waiting for database..."
+            MAX_RETRIES=60
+            RETRY_COUNT=0
+            until airflow db check || [ $RETRY_COUNT -eq $MAX_RETRIES ]; do
+              echo "Waiting for database... ($RETRY_COUNT/$MAX_RETRIES)"
               sleep 5
+              RETRY_COUNT=$((RETRY_COUNT+1))
             done
+            if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+              echo "Database connection timeout!"
+              exit 1
+            fi
             echo "Database is ready!"
         envFrom:
         - configMapRef:
-            name: {{ .Chart.Name }}-config
+            name: {{ .Release.Name }}-config
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
       containers:
       - name: scheduler
         image: "{{ .Values.airflow.image.repository }}:{{ .Values.airflow.image.tag }}"
@@ -40,12 +56,12 @@ spec:
         command: ["airflow", "scheduler"]
         envFrom:
         - configMapRef:
-            name: {{ .Chart.Name }}-config
+            name: {{ .Release.Name }}-config
         env:
         - name: AIRFLOW__CORE__FERNET_KEY
           valueFrom:
             secretKeyRef:
-              name: {{ .Chart.Name }}-secret
+              name: {{ .Release.Name }}-secret
               key: fernet-key
         {{- with .Values.extraEnv }}
         {{- toYaml . | nindent 8 }}
@@ -65,6 +81,18 @@ spec:
           initialDelaySeconds: 60
           periodSeconds: 60
           timeoutSeconds: 10
+          failureThreshold: 5
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - |
+              airflow jobs check --job-type SchedulerJob --hostname $(hostname)
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
         resources:
           {{- toYaml .Values.scheduler.resources | nindent 10 }}
       {{- with .Values.extraContainers.scheduler }}
@@ -74,14 +102,14 @@ spec:
       - name: dags
         {{- if .Values.dags.persistence.enabled }}
         persistentVolumeClaim:
-          claimName: {{ .Chart.Name }}-dags
+          claimName: {{ .Release.Name }}-dags
         {{- else }}
         emptyDir: {}
         {{- end }}
       - name: logs
         {{- if .Values.logs.persistence.enabled }}
         persistentVolumeClaim:
-          claimName: {{ .Chart.Name }}-logs
+          claimName: {{ .Release.Name }}-logs
         {{- else }}
         emptyDir: {}
         {{- end }}

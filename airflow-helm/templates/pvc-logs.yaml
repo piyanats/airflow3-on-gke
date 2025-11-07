@@ -2,11 +2,12 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ .Chart.Name }}-logs
+  name: {{ .Release.Name }}-logs
   labels:
-    app: {{ .Chart.Name }}
+    app: {{ .Release.Name }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
     component: logs
+    release: {{ .Release.Name }}
 spec:
   accessModes:
     - ReadWriteMany
