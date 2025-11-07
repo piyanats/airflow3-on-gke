@@ -126,11 +126,14 @@ logs:
   persistence:
     enabled: false  # Using GCS remote logging instead
 
-# Service Account - With Workload Identity
+# Service Account with Workload Identity
+# Run: ./scripts/create-gcp-resources.sh to create GCP service account and binding
+# Grant necessary roles: roles/storage.admin, roles/bigquery.dataEditor, etc.
 serviceAccount:
   create: true
   name: "airflow"
   annotations:
+    # Replace YOUR-PROJECT-ID with your GCP project ID
     iam.gke.io/gcp-service-account: airflow-sa@YOUR-PROJECT-ID.iam.gserviceaccount.com
 
 # RBAC

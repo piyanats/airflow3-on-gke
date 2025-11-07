@@ -62,10 +62,14 @@ scheduler:
 postgresql:
   enabled: false
 
-# Service Account
+# Service Account with Workload Identity
+# Run: ./scripts/create-gcp-resources.sh to create GCP service account and binding
 serviceAccount:
   create: true
   name: airflow
+  annotations:
+    # Enable Workload Identity for GCS, BigQuery, etc.
+    iam.gke.io/gcp-service-account: airflow-sa@YOUR-PROJECT-ID.iam.gserviceaccount.com
 
 # DAGs configuration
 dags:

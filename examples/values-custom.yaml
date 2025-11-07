@@ -77,8 +77,9 @@ ingress:
         - airflow.yourdomain.com
 
 # Workload Identity for GCP
+# Run: ./scripts/create-gcp-resources.sh to create GCP service account and binding
 serviceAccount:
   create: true
   name: "airflow"
   annotations:
-    iam.gke.io/gcp-service-account: airflow@YOUR-PROJECT-ID.iam.gserviceaccount.com
+    iam.gke.io/gcp-service-account: airflow-sa@YOUR-PROJECT-ID.iam.gserviceaccount.com
