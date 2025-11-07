@@ -4,10 +4,10 @@
 # ============================================================================
 # Google Cloud Platform
 # ============================================================================
-google-cloud-storage==2.13.0
-google-cloud-bigquery==3.14.0
-google-cloud-pubsub==2.19.0
-google-cloud-dataproc==5.9.0
+google-cloud-storage==3.5.0
+google-cloud-bigquery==3.38.0
+google-cloud-pubsub==2.33.0
+google-cloud-dataproc==5.21.0
 db-dtypes==1.1.1  # For BigQuery data types
 
 # ============================================================================
@@ -21,15 +21,15 @@ db-dtypes==1.1.1  # For BigQuery data types
 # ============================================================================
 # Data Processing
 # ============================================================================
-pandas==2.1.4
-numpy==1.26.2
-pyarrow==14.0.1
-polars==0.20.2  # Fast DataFrame library
+pandas==2.3.3
+numpy==2.3.4
+pyarrow==19.0.1
+polars==1.35.1  # Fast DataFrame library
 
 # ============================================================================
 # Databases
 # ============================================================================
-psycopg2-binary==2.9.9  # PostgreSQL
+psycopg2-binary==2.9.11  # PostgreSQL
 # pymongo==4.6.1  # MongoDB
 # redis==5.0.1  # Redis
 # sqlalchemy==2.0.23  # Already included in Airflow
@@ -37,14 +37,14 @@ psycopg2-binary==2.9.9  # PostgreSQL
 # ============================================================================
 # HTTP/API Clients
 # ============================================================================
-requests==2.31.0
-httpx==0.26.0
-aiohttp==3.9.1
+requests==2.32.5
+httpx==0.28.1
+aiohttp==3.13.2
 
 # ============================================================================
 # Data Validation
 # ============================================================================
-pydantic==2.5.3
+pydantic==2.12.4
 # great-expectations==0.18.8  # Uncomment if needed (large dependency)
 
 # ============================================================================

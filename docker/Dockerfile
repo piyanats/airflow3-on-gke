@@ -1,12 +1,12 @@
 # Custom Airflow 3 Image with Additional Dependencies using UV Package Manager
 # UV is a fast Python package installer written in Rust (10-100x faster than pip)
 
-FROM apache/airflow:3.0.0-python3.12
+FROM apache/airflow:3.1.2-python3.12
 
 # Metadata
 LABEL maintainer="your-email@example.com"
 LABEL description="Custom Apache Airflow 3 with additional dependencies installed via UV"
-LABEL version="3.0.0-custom-v1"
+LABEL version="3.1.2-custom-v1"
 
 # Switch to root user to install system packages
 USER root

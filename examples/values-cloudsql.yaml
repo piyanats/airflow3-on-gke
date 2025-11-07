@@ -54,12 +54,15 @@ scheduler:
 postgresql:
   enabled: false
 
-# Service Account with Workload Identity
+# Service Account with Workload Identity for Cloud SQL
+# Note: Use separate service account for Cloud SQL access (airflow-db-sa)
+# Grant roles/cloudsql.client to this service account
+# Run: ./scripts/create-gcp-resources.sh to create GCP service account and binding
 serviceAccount:
   create: true
   name: airflow
   annotations:
-    # Replace with your GCP service account
+    # Replace PROJECT_ID with your GCP project ID
     iam.gke.io/gcp-service-account: airflow-db-sa@PROJECT_ID.iam.gserviceaccount.com
 
 # Cloud SQL Proxy sidecar container

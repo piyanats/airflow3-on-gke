@@ -140,12 +140,15 @@ logs:
     storageClass: "standard-rwo"
 
 # Service Account
+# For GKE Workload Identity setup, see: https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity
+# Run: ./scripts/create-gcp-resources.sh to create GCP service account and binding
 serviceAccount:
   create: true
   name: "airflow"
   annotations:
-    # For GKE Workload Identity
-    # iam.gke.io/gcp-service-account: airflow@PROJECT_ID.iam.gserviceaccount.com
+    # Enable Workload Identity by specifying your GCP service account
+    # Replace YOUR-PROJECT-ID with your actual GCP project ID
+    iam.gke.io/gcp-service-account: airflow-sa@YOUR-PROJECT-ID.iam.gserviceaccount.com
 
 # RBAC
 rbac:
