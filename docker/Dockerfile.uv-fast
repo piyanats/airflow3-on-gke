@@ -1,7 +1,7 @@
 # Ultra-fast build using UV with caching
 # This Dockerfile maximizes UV's speed with layer caching
 
-FROM apache/airflow:3.0.0-python3.12
+FROM apache/airflow:3.1.2-python3.12
 
 USER root
 
