@@ -54,8 +54,8 @@ COPY --chown=airflow:root requirements.txt /tmp/requirements.txt
 
 # Install Python dependencies using UV
 # UV is much faster than pip and handles dependency resolution better
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    /home/airflow/.cargo/bin/uv pip install --system -r /tmp/requirements.txt && \
+# UV was already installed as root user above
+RUN /home/airflow/.cargo/bin/uv pip install --system -r /tmp/requirements.txt && \
     rm /tmp/requirements.txt
 
 # Optional: Copy custom plugins

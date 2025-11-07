@@ -1,22 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Chart.Name }}-webserver
+  name: {{ .Release.Name }}-webserver
   labels:
-    app: {{ .Chart.Name }}
+    app: {{ .Release.Name }}
     component: webserver
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    release: {{ .Release.Name }}
 spec:
   replicas: {{ .Values.webserver.replicas }}
   selector:
     matchLabels:
-      app: {{ .Chart.Name }}
+      app: {{ .Release.Name }}
       component: webserver
   template:
     metadata:
       labels:
-        app: {{ .Chart.Name }}
+        app: {{ .Release.Name }}
         component: webserver
+        release: {{ .Release.Name }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
       initContainers:
@@ -25,14 +27,28 @@ spec:
         command: ['sh', '-c']
         args:
           - |
-            until airflow db check; do
-              echo "Waiting for database..."
+            MAX_RETRIES=60
+            RETRY_COUNT=0
+            until airflow db check || [ $RETRY_COUNT -eq $MAX_RETRIES ]; do
+              echo "Waiting for database... ($RETRY_COUNT/$MAX_RETRIES)"
               sleep 5
+              RETRY_COUNT=$((RETRY_COUNT+1))
             done
+            if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+              echo "Database connection timeout!"
+              exit 1
+            fi
             echo "Database is ready!"
         envFrom:
         - configMapRef:
-            name: {{ .Chart.Name }}-config
+            name: {{ .Release.Name }}-config
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
       - name: init-db
         image: "{{ .Values.airflow.image.repository }}:{{ .Values.airflow.image.tag }}"
         command: ['sh', '-c']
@@ -40,15 +56,22 @@ spec:
           - |
             airflow db migrate
             airflow users create \
-              --username admin \
-              --password admin \
-              --firstname Admin \
-              --lastname User \
+              --username {{ .Values.airflow.adminUser.username }} \
+              --password {{ .Values.airflow.adminUser.password }} \
+              --firstname {{ .Values.airflow.adminUser.firstname }} \
+              --lastname {{ .Values.airflow.adminUser.lastname }} \
               --role Admin \
-              --email admin@example.com || true
+              --email {{ .Values.airflow.adminUser.email }} || true
         envFrom:
         - configMapRef:
-            name: {{ .Chart.Name }}-config
+            name: {{ .Release.Name }}-config
+        resources:
+          requests:
+            cpu: "200m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
       containers:
       - name: webserver
         image: "{{ .Values.airflow.image.repository }}:{{ .Values.airflow.image.tag }}"
@@ -60,17 +83,17 @@ spec:
           protocol: TCP
         envFrom:
         - configMapRef:
-            name: {{ .Chart.Name }}-config
+            name: {{ .Release.Name }}-config
         env:
         - name: AIRFLOW__CORE__FERNET_KEY
           valueFrom:
             secretKeyRef:
-              name: {{ .Chart.Name }}-secret
+              name: {{ .Release.Name }}-secret
               key: fernet-key
         - name: AIRFLOW__WEBSERVER__SECRET_KEY
           valueFrom:
             secretKeyRef:
-              name: {{ .Chart.Name }}-secret
+              name: {{ .Release.Name }}-secret
               key: webserver-secret-key
         {{- with .Values.extraEnv }}
         {{- toYaml . | nindent 8 }}
@@ -103,14 +126,14 @@ spec:
       - name: dags
         {{- if .Values.dags.persistence.enabled }}
         persistentVolumeClaim:
-          claimName: {{ .Chart.Name }}-dags
+          claimName: {{ .Release.Name }}-dags
         {{- else }}
         emptyDir: {}
         {{- end }}
       - name: logs
         {{- if .Values.logs.persistence.enabled }}
         persistentVolumeClaim:
-          claimName: {{ .Chart.Name }}-logs
+          claimName: {{ .Release.Name }}-logs
         {{- else }}
         emptyDir: {}
         {{- end }}
